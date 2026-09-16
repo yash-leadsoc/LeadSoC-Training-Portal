@@ -1,0 +1,17 @@
+const router = require('express').Router();
+const ctrl = require('../controllers/checklistController');
+const { requireAuth, requireRole } = require('../middleware/auth');
+
+router.use(requireAuth);
+
+router.post('/', requireRole('admin', 'manager'), ctrl.create);
+router.get('/by-document/:documentId', ctrl.listByDocument);
+router.get('/:id', ctrl.getOne);
+router.patch('/:id', requireRole('admin', 'manager'), ctrl.update);
+router.delete('/:id', requireRole('admin', 'manager'), ctrl.remove);
+
+// employee responses
+router.get('/:id/my-response', requireRole('employee'), ctrl.myResponse);
+router.put('/:id/my-response', requireRole('employee'), ctrl.saveResponse);
+
+module.exports = router;
