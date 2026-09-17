@@ -272,17 +272,7 @@ exports.remove = async (req, res) => {
       });
     }
 
-    // Only uploader or admin can delete
-    if (
-      req.user.role !== 'admin' &&
-      String(doc.uploadedBy) !== String(req.user._id)
-    ) {
-      return res.status(403).json({
-        message: 'Forbidden',
-      });
-    }
-
-    // Delete the actual uploaded file
+    // Delete original file
     const filePath = path.join(
       UPLOAD_DIR,
       doc.fileName
@@ -290,41 +280,38 @@ exports.remove = async (req, res) => {
 
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
-      console.log('[delete] File deleted:', filePath);
     }
 
-    // Delete generated preview PDF if it exists
+    // Delete generated preview PDF
     const previewDir = path.join(
       UPLOAD_DIR,
       'previews'
     );
 
-    const previewFile = path.join(
-      previewDir,
-      `${path.basename(
-        doc.fileName,
-        path.extname(doc.fileName)
-      )}.pdf`
+    const baseName = path.basename(
+      doc.fileName,
+      path.extname(doc.fileName)
     );
 
-    if (fs.existsSync(previewFile)) {
-      fs.unlinkSync(previewFile);
-      console.log(
-        '[delete] Preview PDF deleted:',
-        previewFile
-      );
+    const previewPath = path.join(
+      previewDir,
+      `${baseName}.pdf`
+    );
+
+    if (fs.existsSync(previewPath)) {
+      fs.unlinkSync(previewPath);
     }
 
-    // Permanently delete database record
+    // Delete MongoDB document
     await Document.findByIdAndDelete(doc._id);
 
-    return res.json({
+    res.json({
       message: 'Document deleted successfully',
     });
   } catch (err) {
-    console.error('[delete] Error:', err);
+    console.error('Delete error:', err);
 
-    return res.status(500).json({
+    res.status(500).json({
       message: 'Failed to delete document',
     });
   }
