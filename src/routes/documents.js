@@ -12,12 +12,13 @@ router.get('/:id', ctrl.getOne);
 router.get('/:id/preview', ctrl.preview);
 router.get('/:id/download', ctrl.download);
 router.post('/:id/review', requireRole('employee'), ctrl.markReviewed);
-router.delete('/:id', requireRole('admin', 'manager'), ctrl.remove);
 
 router.delete(
   '/remove-all',
   requireRole('admin'),
   ctrl.removeAll
 );
+
+router.delete('/:id', requireRole('admin', 'manager'), ctrl.remove);
 
 module.exports = router;
