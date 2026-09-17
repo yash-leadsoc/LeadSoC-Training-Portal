@@ -11,7 +11,7 @@ exports.upload = async (req, res) => {
     const { title, description, domainId } = req.body;
     if (!title || !domainId) {
       // clean the orphan file
-      fs.unlink(path.join(UPLOAD_DIR, req.file.filename), () => {});
+      fs.unlink(path.join(UPLOAD_DIR, req.file.filename), () => { });
       return res.status(400).json({ message: 'title and domainId are required' });
     }
 
@@ -31,6 +31,15 @@ exports.upload = async (req, res) => {
       { path: 'uploadedBy', select: 'name role' },
     ]);
     res.status(201).json({ document: populated });
+
+    console.log('[upload] FILE SAVED:', {
+      path: req.file?.path,
+      filename: req.file?.filename,
+      originalname: req.file?.originalname,
+      exists: req.file?.path
+        ? fs.existsSync(req.file.path)
+        : false,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Upload failed' });
