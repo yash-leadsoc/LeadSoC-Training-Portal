@@ -316,3 +316,37 @@ exports.remove = async (req, res) => {
     });
   }
 };
+exports.removeAll = async (req, res) => {
+  try {
+    // Delete all files inside uploads
+    if (fs.existsSync(UPLOAD_DIR)) {
+      const files = fs.readdirSync(UPLOAD_DIR);
+
+      for (const file of files) {
+        const filePath = path.join(UPLOAD_DIR, file);
+
+        fs.rmSync(filePath, {
+          recursive: true,
+          force: true,
+        });
+      }
+    }
+
+    // Re-create uploads directory
+    fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+
+    // Delete all document records
+    const result = await Document.deleteMany({});
+
+    res.json({
+      message: 'All documents deleted successfully',
+      deletedDocuments: result.deletedCount,
+    });
+  } catch (err) {
+    console.error('[removeAll] Error:', err);
+
+    res.status(500).json({
+      message: 'Failed to delete all documents',
+    });
+  }
+};
