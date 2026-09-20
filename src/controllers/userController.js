@@ -108,3 +108,46 @@ exports.setActive = async (req, res) => {
   await user.save();
   res.json({ user: user.toSafeJSON() });
 };
+
+
+exports.assignDomains = async (req, res) => {
+  try {
+    const { domainIds } = req.body;
+
+    if (!Array.isArray(domainIds)) {
+      return res.status(400).json({
+        message: 'domainIds must be an array',
+      });
+    }
+
+    const employee = await User.findById(req.params.id);
+
+    if (!employee) {
+      return res.status(404).json({
+        message: 'Employee not found',
+      });
+    }
+
+    if (employee.role !== 'employee') {
+      return res.status(400).json({
+        message: 'Domains can only be assigned to employees',
+      });
+    }
+
+    employee.assignedDomains = domainIds;
+
+    await employee.save();
+
+    res.json({
+      message: 'Domains assigned successfully',
+      assignedDomains: employee.assignedDomains,
+    });
+
+  } catch (error) {
+    console.error('[assignDomains] Error:', error);
+
+    res.status(500).json({
+      message: 'Failed to assign domains',
+    });
+  }
+};

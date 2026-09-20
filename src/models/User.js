@@ -11,6 +11,12 @@ const userSchema = new mongoose.Schema(
     passwordHash: { type: String, required: true },
     role: { type: String, enum: ROLES, required: true },
 
+    assignedDomains: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Domain',
+      },
+    ],
     // hierarchy: which user created this account
     // admin -> creates managers, manager -> creates employees
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },

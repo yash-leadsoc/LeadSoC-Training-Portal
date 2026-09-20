@@ -18,6 +18,31 @@ const documentSchema = new mongoose.Schema(
     uploaderRole: { type: String, enum: ['admin', 'manager'], required: true },
 
     active: { type: Boolean, default: true },
+
+    cloudinaryPublicId: {
+      type: String,
+      default: null,
+    },
+
+    cloudinaryUrl: {
+      type: String,
+      default: null,
+    },
+
+    cloudinaryResourceType: {
+      type: String,
+      default: 'raw',
+    },
+
+    previewPublicId: {
+      type: String,
+      default: null,
+    },
+
+    previewUrl: {
+      type: String,
+      default: null,
+    },
   },
   { timestamps: true }
 );

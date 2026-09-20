@@ -11,7 +11,13 @@ router.post('/employees', requireRole('admin', 'manager'), ctrl.createEmployee);
 
 router.get('/', requireRole('admin', 'manager'), ctrl.listUsers);
 router.get('/managers', requireRole('admin'), ctrl.listManagers);
+router.patch(
+  '/:id/domains',
+  requireRole('admin', 'manager'),
+  ctrl.assignDomains
+);
 router.get('/:id', requireRole('admin', 'manager'), ctrl.getUser);
 router.patch('/:id/active', requireRole('admin', 'manager'), ctrl.setActive);
+
 
 module.exports = router;
