@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
+const pptSubmissionRoutes = require('./routes/pptSubmission');
 
 const app = express();
 
@@ -19,6 +20,9 @@ app.use('/api/documents', require('./routes/documents'));
 app.use('/api/checklists', require('./routes/checklists'));
 app.use('/api/writeups', require('./routes/writeups'));
 app.use('/api/tracking', require('./routes/tracking'));
+app.use('/api/ppt-submissions', pptSubmissionRoutes);
+app.use('/api/qa', require('./routes/qa'));
+
 
 // 404
 app.use((req, res) => res.status(404).json({ message: 'Not found' }));

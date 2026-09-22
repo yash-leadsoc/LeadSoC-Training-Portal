@@ -1,8 +1,48 @@
 const Domain = require('../models/Domain');
 
 exports.list = async (req, res) => {
-  const domains = await Domain.find({ active: true }).sort({ name: 1 });
-  res.json({ domains });
+  try {
+    const domains = await Domain.find().sort({ name: 1 });
+
+    // Admin / Manager
+    if (
+      req.user.role === 'admin' ||
+      req.user.role === 'manager'
+    ) {
+      return res.json({
+        domains: domains.map((domain) => ({
+          ...domain.toObject(),
+          assigned: true,
+        })),
+      });
+    }
+
+    // Employee
+    const assignedDomainIds = (
+      req.user.assignedDomains || []
+    ).map((domain) =>
+      String(domain?._id || domain)
+    );
+
+    const result = domains.map((domain) => ({
+      ...domain.toObject(),
+
+      // true if assigned to employee
+      assigned: assignedDomainIds.includes(
+        String(domain._id)
+      ),
+    }));
+
+    return res.json({
+      domains: result,
+    });
+  } catch (error) {
+    console.error('[domains] Error:', error);
+
+    return res.status(500).json({
+      message: 'Failed to load domains',
+    });
+  }
 };
 
 exports.create = async (req, res) => {

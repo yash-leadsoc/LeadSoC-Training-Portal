@@ -13,6 +13,7 @@ router.get('/', requireRole('admin', 'manager'), ctrl.listUsers);
 router.get('/managers', requireRole('admin'), ctrl.listManagers);
 router.patch(
   '/:id/domains',
+  requireAuth,
   requireRole('admin', 'manager'),
   ctrl.assignDomains
 );

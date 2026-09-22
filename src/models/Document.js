@@ -18,6 +18,9 @@ const documentSchema = new mongoose.Schema(
     uploaderRole: { type: String, enum: ['admin', 'manager'], required: true },
 
     active: { type: Boolean, default: true },
+    type: { type: String, enum: ['file', 'youtube', 'html'], default: 'file' },
+    sourceUrl: { type: String, default: null },
+    htmlContent: { type: String, default: null },
 
     cloudinaryPublicId: {
       type: String,

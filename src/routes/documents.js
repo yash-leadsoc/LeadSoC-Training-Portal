@@ -20,5 +20,6 @@ router.delete(
 );
 
 router.delete('/:id', requireRole('admin', 'manager'), ctrl.remove);
+router.post('/link', requireRole('admin', 'manager'), ctrl.createLink);
 
 module.exports = router;

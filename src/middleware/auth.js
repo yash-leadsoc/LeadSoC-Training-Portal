@@ -18,15 +18,61 @@ async function requireAuth(req, res, next) {
     if (!token) return res.status(401).json({ message: 'Not authenticated' });
 
     const payload = jwt.verify(token, SECRET());
-    const user = await User.findById(payload.id);
+    // const user = await User.findById(payload.id);
+    const user = await User.findById(payload.id).populate(
+      'assignedDomains',
+      'name icon description'
+    );
+
     if (!user || !user.active) return res.status(401).json({ message: 'Invalid or inactive account' });
 
     req.user = user;
     next();
   } catch (err) {
-    return res.status(401).json({ message: 'Invalid token' });
+    console.error('[auth] Error:', err);
+
+    return res.status(401).json({
+      message: 'Invalid token',
+      error: err.message,
+    });
   }
 }
+
+
+// async function requireAuth(req, res, next) {
+//   try {
+//     const header = req.headers.authorization || '';
+//     const token = header.startsWith('Bearer ')
+//       ? header.slice(7)
+//       : null;
+
+//     if (!token) {
+//       return res.status(401).json({
+//         message: 'Not authenticated'
+//       });
+//     }
+
+//     const payload = jwt.verify(token, SECRET());
+
+//     const user = await User.findById(payload.id)
+//       .populate('assignedDomains');
+
+//     if (!user || !user.active) {
+//       return res.status(401).json({
+//         message: 'Invalid or inactive account'
+//       });
+//     }
+
+//     req.user = user;
+
+//     next();
+
+//   } catch (err) {
+//     return res.status(401).json({
+//       message: 'Invalid token'
+//     });
+//   }
+// }
 
 // requireRole('admin') or requireRole('admin', 'manager')
 function requireRole(...roles) {

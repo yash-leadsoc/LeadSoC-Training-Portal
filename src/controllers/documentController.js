@@ -6,6 +6,7 @@ const { UPLOAD_DIR } = require('../middleware/upload');
 const os = require('os');
 const cloudinary = require('../config/cloudinary');
 const { spawn } = require('child_process');
+const Domain = require('../models/Domain');
 
 function convertToPdf(inputPath, outputDir) {
   return new Promise((resolve, reject) => {
@@ -310,14 +311,76 @@ exports.upload = async (req, res) => {
 
 
 // List materials, optionally by domain. Everyone authenticated can list.
+// exports.list = async (req, res) => {
+//   const filter = { active: true };
+//   if (req.query.domainId) filter.domain = req.query.domainId;
+//   const docs = await Document.find(filter)
+//     .sort({ createdAt: -1 })
+//     .populate('domain', 'key name')
+//     .populate('uploadedBy', 'name role');
+//   res.json({ documents: docs });
+// };
+
 exports.list = async (req, res) => {
-  const filter = { active: true };
-  if (req.query.domainId) filter.domain = req.query.domainId;
-  const docs = await Document.find(filter)
-    .sort({ createdAt: -1 })
-    .populate('domain', 'key name')
-    .populate('uploadedBy', 'name role');
-  res.json({ documents: docs });
+  try {
+    const { domainId } = req.query;
+
+    const filter = {};
+
+    // --------------------------------------------------
+    // DOMAIN FILTER
+    // --------------------------------------------------
+    if (domainId) {
+      filter.domain = domainId;
+    }
+
+    // --------------------------------------------------
+    // EMPLOYEE ACCESS CONTROL
+    // --------------------------------------------------
+    if (req.user.role === 'employee') {
+      const assignedDomainIds = (req.user.assignedDomains || []).map(
+        (id) => id?._id || id
+      );
+
+      // If employee requests a specific domain,
+      // make sure they are assigned to it.
+      if (domainId) {
+        const allowed = assignedDomainIds.some(
+          (id) => String(id) === String(domainId)
+        );
+
+        if (!allowed) {
+          return res.status(403).json({
+            message: 'You are not assigned to this domain',
+          });
+        }
+      } else {
+        // No specific domain selected:
+        // return documents only from assigned domains.
+        filter.domain = {
+          $in: assignedDomainIds,
+        };
+      }
+    }
+
+    // --------------------------------------------------
+    // GET DOCUMENTS
+    // --------------------------------------------------
+    const documents = await Document.find(filter)
+      .populate('domain', 'name icon description')
+      .populate('uploadedBy', 'name email employeeCode')
+      .sort({ createdAt: -1 });
+
+    return res.json({
+      documents,
+    });
+  } catch (error) {
+    console.error('[documents] Error:', error);
+
+    return res.status(500).json({
+      message: 'Failed to load documents',
+    });
+  }
 };
 
 exports.getOne = async (req, res) => {
@@ -500,5 +563,62 @@ exports.removeAll = async (req, res) => {
     res.status(500).json({
       message: 'Failed to delete all documents',
     });
+  }
+};
+
+function youtubeEmbed(url) {
+  if (!url) return null;
+  const u = String(url).trim();
+  let m, id = null;
+  if ((m = u.match(/[?&]v=([\w-]{6,})/))) id = m[1];
+  else if ((m = u.match(/youtu\.be\/([\w-]{6,})/))) id = m[1];
+  else if ((m = u.match(/youtube\.com\/embed\/([\w-]{6,})/))) id = m[1];
+  else if ((m = u.match(/youtube\.com\/shorts\/([\w-]{6,})/))) id = m[1];
+  else if ((m = u.match(/youtube\.com\/live\/([\w-]{6,})/))) id = m[1];
+  return id ? `https://www.youtube.com/embed/${id}` : null;
+}
+
+exports.createLink = async (req, res) => {
+  try {
+    const { title, description, domainId, type, url, html } = req.body;
+    if (!title || !title.trim()) return res.status(400).json({ message: 'Title is required' });
+    if (!domainId) return res.status(400).json({ message: 'Domain is required' });
+    if (!['youtube', 'html'].includes(type)) return res.status(400).json({ message: 'Invalid material type' });
+
+    let cloudinaryUrl = null, sourceUrl = null, htmlContent = null;
+    let originalName = title.trim(), mimeType = 'text/html', size = 0;
+
+    if (type === 'youtube') {
+      const embed = youtubeEmbed(url);
+      if (!embed) return res.status(400).json({ message: 'Please provide a valid YouTube link' });
+      cloudinaryUrl = embed;
+      sourceUrl = String(url).trim();
+      originalName = `${title.trim()} (YouTube)`;
+      mimeType = 'video/youtube';
+    } else {
+      if (!html || !html.trim()) return res.status(400).json({ message: 'HTML content is required' });
+      htmlContent = html;
+      cloudinaryUrl = 'data:text/html;base64,' + Buffer.from(html, 'utf8').toString('base64');
+      originalName = `${title.trim()}.html`;
+      size = Buffer.byteLength(html, 'utf8');
+    }
+
+    const doc = await Document.create({
+      title: title.trim(),
+      description: (description || '').trim(),
+      domain: domainId,
+      fileName: 'link',
+      originalName, mimeType, size,
+      uploadedBy: req.user._id,
+      uploaderRole: req.user.role,
+      type, sourceUrl, htmlContent,
+      cloudinaryUrl, previewUrl: cloudinaryUrl,
+      cloudinaryResourceType: 'link',
+    });
+
+    res.status(201).json({ document: doc });
+  } catch (e) {
+    console.error('[documents] createLink', e);
+    res.status(500).json({ message: 'Could not create material' });
   }
 };

@@ -12,11 +12,11 @@ const userSchema = new mongoose.Schema(
     role: { type: String, enum: ROLES, required: true },
 
     assignedDomains: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Domain',
-      },
-    ],
+  {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Domain',
+  },
+],
     // hierarchy: which user created this account
     // admin -> creates managers, manager -> creates employees
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
@@ -48,6 +48,7 @@ userSchema.methods.toSafeJSON = function () {
     createdBy: this.createdBy,
     manager: this.manager,
     active: this.active,
+    assignedDomains: this.assignedDomains || [],
     enrolledAt: this.enrolledAt,
     createdAt: this.createdAt,
   };
