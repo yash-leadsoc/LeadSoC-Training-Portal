@@ -4,30 +4,30 @@ const Document = require('../models/Document');
 
 // Manager creates write-up questions for a document.
 exports.create = async (req, res) => {
-  try {
-    const { title, documentId, questions } = req.body;
-    if (!title || !documentId || !Array.isArray(questions) || questions.length === 0) {
-      return res.status(400).json({ message: 'title, documentId and at least one question are required' });
-    }
-    const doc = await Document.findById(documentId);
-    if (!doc) return res.status(404).json({ message: 'Document not found' });
+  const { title, domainId, questions } = req.body;
+  if (!domainId) return res.status(400).json({ message: 'Domain is required' });
+  const existing = await Writeup.findOne({ domain: domainId, active: true });
+  if (existing) return res.status(409).json({ message: 'This domain already has a write-up' });
+  const writeup = await Writeup.create({
+    title, domain: domainId, document: null,
+    questions: (questions || []).map((q, i) => ({
+      text: q.text, section: q.section || 'General', order: q.order != null ? q.order : i,
+    })),
+    createdBy: req.user._id,
+  });
+  res.status(201).json({ writeup });
+};
 
-    const writeup = await Writeup.create({
-      title,
-      document: doc._id,
-      domain: doc.domain,
-      createdBy: req.user._id,
-      questions: questions.map((q, i) => ({
-        text: q.text,
-        section: q.section || 'General',
-        order: q.order != null ? q.order : i,
-      })),
-    });
-    res.status(201).json({ writeup });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Could not create write-up' });
-  }
+exports.writeupForDomain = async (req, res) => {
+  const writeup = await Writeup.findOne({ domain: req.params.domainId, active: true });
+  res.json({ writeup: writeup || null });
+};
+
+exports.deleteWriteup = async (req, res) => {
+  const w = await Writeup.findById(req.params.id);
+  if (!w) return res.status(404).json({ message: 'Write-up not found' });
+  await w.deleteOne();
+  res.json({ message: 'Write-up deleted' });
 };
 
 exports.listByDocument = async (req, res) => {

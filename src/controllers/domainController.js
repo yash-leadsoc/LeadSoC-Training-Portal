@@ -75,3 +75,12 @@ exports.remove = async (req, res) => {
   if (!domain) return res.status(404).json({ message: 'Domain not found' });
   res.json({ message: 'Domain archived' });
 };
+
+
+exports.deleteDomain = async (req, res) => {
+  const domain = await Domain.findById(req.params.id);
+  if (!domain) return res.status(404).json({ message: 'Domain not found' });
+  domain.active = false;            // soft delete; or domain.deleteOne() for hard delete
+  await domain.save();
+  res.json({ message: 'Domain deleted' });
+};

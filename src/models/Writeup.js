@@ -13,7 +13,11 @@ const questionSchema = new mongoose.Schema(
 const writeupSchema = new mongoose.Schema(
   {
     title: { type: String, required: true },
-    document: { type: mongoose.Schema.Types.ObjectId, ref: 'Document', required: true },
+    // document: { type: mongoose.Schema.Types.ObjectId, ref: 'Document', required: true },
+    // domain: { type: mongoose.Schema.Types.ObjectId, ref: 'Domain', required: true },
+    // document: { type: mongoose.Schema.Types.ObjectId, ref: 'Document', default: null },
+    // domain: { type: mongoose.Schema.Types.ObjectId, ref: 'Domain', required: true },
+    document: { type: mongoose.Schema.Types.ObjectId, ref: 'Document', default: null },
     domain: { type: mongoose.Schema.Types.ObjectId, ref: 'Domain', required: true },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     questions: [questionSchema],

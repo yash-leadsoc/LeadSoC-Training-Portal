@@ -7,5 +7,6 @@ router.get('/', ctrl.list);
 router.post('/', requireRole('admin', 'manager'), ctrl.create);
 router.patch('/:id', requireRole('admin', 'manager'), ctrl.update);
 router.delete('/:id', requireRole('admin'), ctrl.remove);
+router.delete('/:id', requireRole('admin'), ctrl.deleteDomain);
 
 module.exports = router;

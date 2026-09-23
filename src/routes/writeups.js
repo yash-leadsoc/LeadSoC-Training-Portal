@@ -8,7 +8,9 @@ router.post('/', requireRole('admin', 'manager'), ctrl.create);
 router.get('/by-document/:documentId', ctrl.listByDocument);
 router.get('/:id', ctrl.getOne);
 router.patch('/:id', requireRole('admin', 'manager'), ctrl.update);
-router.delete('/:id', requireRole('admin', 'manager'), ctrl.remove);
+router.delete('/:id', requireRole('admin'), ctrl.remove);
+router.get('/domain/:domainId', ctrl.writeupForDomain);
+router.delete('/:id', requireRole('admin'), ctrl.deleteWriteup);
 
 // employee answers
 router.get('/:id/my-answer', requireRole('employee'), ctrl.myAnswer);

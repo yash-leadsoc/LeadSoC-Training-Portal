@@ -112,18 +112,18 @@ const Document = require('../models/Document');
 // Manager creates a checklist for a document.
 exports.create = async (req, res) => {
   try {
-    const { title, documentId, items } = req.body;
-    if (!title || !documentId || !Array.isArray(items) || items.length === 0) {
-      return res.status(400).json({ message: 'title, documentId and at least one item are required' });
-    }
-    const doc = await Document.findById(documentId);
-    if (!doc) return res.status(404).json({ message: 'Document not found' });
+    const { title, domainId, items } = req.body;
+    if (!domainId) return res.status(400).json({ message: 'Domain is required' });
+
+    const existing = await Checklist.findOne({ domain: domainId, active: true });
+    if (existing) return res.status(409).json({ message: 'This domain already has a checklist' });
+
+
 
     const checklist = await Checklist.create({
       title,
-      document: doc._id,
-      domain: doc.domain,
-      createdBy: req.user._id,
+      domain: domainId,
+      document: null,
       items: items.map((it, i) => ({
         text: it.text,
         category: it.category || 'tool',
@@ -132,6 +132,7 @@ exports.create = async (req, res) => {
         topic: it.topic || '',
         order: it.order != null ? it.order : i,
       })),
+      createdBy: req.user._id,
     });
     res.status(201).json({ checklist });
   } catch (err) {
@@ -139,6 +140,43 @@ exports.create = async (req, res) => {
     res.status(500).json({ message: 'Could not create checklist' });
   }
 };
+
+
+// checklistController.js
+
+exports.checklistForDomain = async (req, res) => {
+  const checklist = await Checklist.findOne({ domain: req.params.domainId, active: true });
+  res.json({ checklist: checklist || null });
+};
+
+
+// PUT update a checklist (title + items)
+exports.updateChecklist = async (req, res) => {
+  const checklist = await Checklist.findById(req.params.id);
+  if (!checklist) return res.status(404).json({ message: 'Checklist not found' });
+  if (req.body.title != null) checklist.title = req.body.title;
+  if (Array.isArray(req.body.items)) {
+    checklist.items = req.body.items.map((it, i) => ({
+      text: it.text,
+      category: it.category || 'tool',
+      section: it.section || '',
+      code: it.code || '',
+      topic: it.topic || '',
+      order: it.order != null ? it.order : i,
+    }));
+  }
+  await checklist.save();
+  res.json({ checklist });
+};
+
+// DELETE a checklist
+exports.deleteChecklist = async (req, res) => {
+  const checklist = await Checklist.findById(req.params.id);
+  if (!checklist) return res.status(404).json({ message: 'Checklist not found' });
+  await checklist.deleteOne();           // or: checklist.active = false; await checklist.save();
+  res.json({ message: 'Checklist deleted' });
+};
+
 
 // List checklists for a document (any authenticated user).
 exports.listByDocument = async (req, res) => {
