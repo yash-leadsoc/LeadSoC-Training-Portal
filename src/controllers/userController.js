@@ -204,7 +204,7 @@
 
 const User = require('../models/User');
 const Domain = require('../models/Domain');
-
+const { logAudit } = require('../utils/audit');
 function genCode(role) {
   const rand = Math.floor(1000 + Math.random() * 9000);
   return role === 'manager' ? `LS-MGR-${rand}` : `LS-${rand}`;
@@ -234,6 +234,10 @@ exports.createManager = async (req, res) => {
     });
     await user.setPassword(password);
     await user.save();
+     await logAudit(req, {                             // ← after delete, before res.json
+    action: 'create', entity: 'manager',
+    entityId: user._id, entityLabel: user.name,
+  });
     res.status(201).json({ user: user.toSafeJSON() });
   } catch (err) {
     console.error(err);
@@ -270,6 +274,11 @@ exports.createEmployee = async (req, res) => {
     });
     await user.setPassword(password);
     await user.save();
+
+     await logAudit(req, {                             // ← after delete, before res.json
+    action: 'create', entity: 'employee',
+    entityId: user._id, entityLabel: user.name,
+  });
     res.status(201).json({ user: user.toSafeJSON() });
   } catch (err) {
     console.error(err);
@@ -397,6 +406,11 @@ exports.assignDomains = async (req, res) => {
       'assignedDomains',
       'name icon description'
     );
+
+     await logAudit(req, {                             // ← after delete, before res.json
+    action: 'assign', entity: 'domain',
+    entityId: employee._id, entityLabel: employee.name,
+  });
 
     return res.json({
       message: 'Domains assigned successfully',

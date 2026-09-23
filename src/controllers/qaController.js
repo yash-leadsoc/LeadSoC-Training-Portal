@@ -1,6 +1,6 @@
 const Question = require('../models/Question');
 const Answer = require('../models/Answer');
-
+const { logAudit } = require('../utils/audit');
 // GET /api/qa/questions  — list all questions (newest first) with answer counts
 exports.listQuestions = async (req, res) => {
   try {
@@ -75,6 +75,10 @@ exports.createQuestion = async (req, res) => {
       author: req.user._id,
     });
 
+     await logAudit(req, {                             // ← after delete, before res.json
+    action: 'create', entity: 'question',
+    entityId: q._id, entityLabel: q.title,
+  });
     res.status(201).json({
       question: {
         id: q._id,
@@ -106,6 +110,10 @@ exports.createAnswer = async (req, res) => {
       author: req.user._id,
     });
 
+     await logAudit(req, {                             // ← after delete, before res.json
+    action: 'create', entity: 'answer',
+    entityId: a._id, entityLabel: a.body,
+  });
     res.status(201).json({
       answer: {
         id: a._id,
@@ -129,6 +137,10 @@ exports.deleteQuestion = async (req, res) => {
     await Answer.deleteMany({ question: question._id });
     await question.deleteOne();
 
+     await logAudit(req, {                             // ← after delete, before res.json
+    action: 'delete', entity: 'question',
+    entityId: question._id, entityLabel: question.title,
+  });
     res.json({ message: 'Question deleted' });
   } catch (e) {
     console.error('[qa] deleteQuestion', e);
@@ -144,6 +156,10 @@ exports.deleteAnswer = async (req, res) => {
 
     await answer.deleteOne();
 
+     await logAudit(req, {                             // ← after delete, before res.json
+    action: 'delete', entity: 'answer',
+    entityId: answer._id, entityLabel: answer.body,
+  });
     res.json({ message: 'Answer deleted' });
   } catch (e) {
     console.error('[qa] deleteAnswer', e);

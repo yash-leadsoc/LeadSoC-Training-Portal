@@ -1,5 +1,5 @@
 const Domain = require('../models/Domain');
-
+const { logAudit } = require('../utils/audit');
 exports.list = async (req, res) => {
   try {
     const domains = await Domain.find().sort({ name: 1 });
@@ -58,6 +58,10 @@ exports.create = async (req, res) => {
       icon: icon || '📘',
       createdBy: req.user._id,
     });
+     await logAudit(req, {                             // ← after delete, before res.json
+    action: 'create', entity: 'domain',
+    entityId: domain._id, entityLabel: domain.name,
+  });
     res.status(201).json({ domain });
   } catch (err) {
     res.status(500).json({ message: 'Could not create domain' });
@@ -82,5 +86,9 @@ exports.deleteDomain = async (req, res) => {
   if (!domain) return res.status(404).json({ message: 'Domain not found' });
   domain.active = false;            // soft delete; or domain.deleteOne() for hard delete
   await domain.save();
+   await logAudit(req, {                             // ← after delete, before res.json
+    action: 'delete', entity: 'domain',
+    entityId: domain._id, entityLabel: domain.name,
+  });
   res.json({ message: 'Domain deleted' });
 };

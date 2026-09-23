@@ -7,7 +7,7 @@ const os = require('os');
 const cloudinary = require('../config/cloudinary');
 const { spawn } = require('child_process');
 const Domain = require('../models/Domain');
-
+const { logAudit } = require('../utils/audit');
 function convertToPdf(inputPath, outputDir) {
   return new Promise((resolve, reject) => {
     const child = spawn('soffice', [
@@ -513,6 +513,11 @@ exports.remove = async (req, res) => {
       document._id
     );
 
+     await logAudit(req, {                             // ← after delete, before res.json
+    action: 'delete', entity: 'document',
+    entityId: document._id, entityLabel: document.title,
+  });
+
     return res.json({
       message:
         'Document deleted successfully',
@@ -614,6 +619,11 @@ exports.createLink = async (req, res) => {
       type, sourceUrl, htmlContent,
       cloudinaryUrl, previewUrl: cloudinaryUrl,
       cloudinaryResourceType: 'link',
+    });
+
+    await logAudit(req, {                             // ← after delete, before res.json
+      action: 'create', entity: 'document',
+      entityId: doc._id, entityLabel: doc.title,
     });
 
     res.status(201).json({ document: doc });

@@ -1,7 +1,7 @@
 const Writeup = require('../models/Writeup');
 const WriteupAnswer = require('../models/WriteupAnswer');
 const Document = require('../models/Document');
-
+const { logAudit } = require('../utils/audit');
 // Manager creates write-up questions for a document.
 exports.create = async (req, res) => {
   const { title, domainId, questions } = req.body;
@@ -15,6 +15,10 @@ exports.create = async (req, res) => {
     })),
     createdBy: req.user._id,
   });
+   await logAudit(req, {                             // ← after delete, before res.json
+    action: 'create', entity: 'writeup',
+    entityId: writeup._id, entityLabel: writeup.title,
+  });
   res.status(201).json({ writeup });
 };
 
@@ -26,6 +30,10 @@ exports.writeupForDomain = async (req, res) => {
 exports.deleteWriteup = async (req, res) => {
   const w = await Writeup.findById(req.params.id);
   if (!w) return res.status(404).json({ message: 'Write-up not found' });
+   await logAudit(req, {                             // ← after delete, before res.json
+    action: 'delete', entity: 'writeup',
+    entityId: w._id, entityLabel: w.title,
+  });
   await w.deleteOne();
   res.json({ message: 'Write-up deleted' });
 };

@@ -22,6 +22,7 @@ app.use('/api/writeups', require('./routes/writeups'));
 app.use('/api/tracking', require('./routes/tracking'));
 app.use('/api/ppt-submissions', pptSubmissionRoutes);
 app.use('/api/qa', require('./routes/qa'));
+app.use('/api/audit', require('./routes/audit'));
 
 
 // 404

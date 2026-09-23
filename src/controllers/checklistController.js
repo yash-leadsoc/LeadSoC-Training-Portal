@@ -108,6 +108,7 @@
 const Checklist = require('../models/Checklist');
 const ChecklistResponse = require('../models/ChecklistResponse');
 const Document = require('../models/Document');
+const { logAudit } = require('../utils/audit');
 
 // Manager creates a checklist for a document.
 exports.create = async (req, res) => {
@@ -134,6 +135,12 @@ exports.create = async (req, res) => {
       })),
       createdBy: req.user._id,
     });
+
+    await logAudit(req, {                             // ← add here, after create, before res.json
+      action: 'create', entity: 'checklist',
+      entityId: checklist._id, entityLabel: checklist.title,
+    });
+
     res.status(201).json({ checklist });
   } catch (err) {
     console.error(err);
@@ -174,6 +181,12 @@ exports.deleteChecklist = async (req, res) => {
   const checklist = await Checklist.findById(req.params.id);
   if (!checklist) return res.status(404).json({ message: 'Checklist not found' });
   await checklist.deleteOne();           // or: checklist.active = false; await checklist.save();
+
+   await logAudit(req, {                             // ← after delete, before res.json
+    action: 'delete', entity: 'checklist',
+    entityId: checklist._id, entityLabel: checklist.title,
+  });
+
   res.json({ message: 'Checklist deleted' });
 };
 

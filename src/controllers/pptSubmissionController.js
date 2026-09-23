@@ -1,5 +1,5 @@
 const PptSubmission = require('../models/PptSubmission');
-
+const { logAudit } = require('../utils/audit');
 exports.submit = async (req, res) => {
   try {
     const {
@@ -46,6 +46,10 @@ exports.submit = async (req, res) => {
       }
     );
 
+     await logAudit(req, {                             // ← after delete, before res.json
+    action: 'submit', entity: 'pptSubmission',
+    entityId: submission._id, entityLabel: submission.exerciseName,
+  });
     return res.json({
       message: 'PPT submitted successfully',
       submission,

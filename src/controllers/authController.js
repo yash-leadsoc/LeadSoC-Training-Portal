@@ -1,6 +1,6 @@
 const User = require('../models/User');
 const { signToken } = require('../middleware/auth');
-
+const { logAudit } = require('../utils/audit');
 // Single login endpoint for all three roles.
 // The client sends { identifier, password } where identifier is email OR employeeCode.
 exports.login = async (req, res) => {
@@ -22,6 +22,15 @@ exports.login = async (req, res) => {
     if (!ok) return res.status(401).json({ message: 'Invalid credentials' });
 
     const token = signToken(user);
+
+    await logAudit(req, {
+      action: 'login',
+      entity: 'auth',
+      entityId: user._id,
+      entityLabel: user.name,
+      meta: { email: user.email, at: new Date().toISOString() },
+    });
+
     res.json({ token, user: user.toSafeJSON() });
   } catch (err) {
     console.error(err);
@@ -46,6 +55,7 @@ exports.changePassword = async (req, res) => {
     if (!ok) return res.status(400).json({ message: 'Current password is incorrect' });
     await req.user.setPassword(newPassword);
     await req.user.save();
+    
     res.json({ message: 'Password updated' });
   } catch (err) {
     res.status(500).json({ message: 'Could not update password' });
