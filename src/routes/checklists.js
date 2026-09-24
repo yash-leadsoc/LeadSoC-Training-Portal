@@ -10,6 +10,7 @@ router.get('/:id', ctrl.getOne);
 router.patch('/:id', requireRole('admin', 'manager'), ctrl.update);
 router.delete('/:id', requireRole('admin'), ctrl.remove);
 router.get('/domain/:domainId', ctrl.checklistForDomain);
+router.put('/:id', requireRole('admin', 'manager'), ctrl.updateChecklist);
 
 // employee responses
 router.get('/:id/my-response', requireRole('employee'), ctrl.myResponse);

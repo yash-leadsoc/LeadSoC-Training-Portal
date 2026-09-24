@@ -102,3 +102,29 @@ exports.saveAnswer = async (req, res) => {
   );
   res.json({ answer: saved });
 };
+
+
+exports.updateWriteup = async (req, res) => {
+  try {
+    const writeup = await Writeup.findById(req.params.id);
+    if (!writeup) return res.status(404).json({ message: 'Write-up not found' });
+
+    if (req.body.title != null) writeup.title = req.body.title;
+    if (Array.isArray(req.body.questions)) {
+      writeup.questions = req.body.questions.map((q, i) => ({
+        text: q.text,
+        section: q.section || 'General',
+        order: q.order != null ? q.order : i,
+      }));
+    }
+    await writeup.save();
+    await logAudit(req, {                             // ← after delete, before res.json
+    action: 'update', entity: 'writeup',
+    entityId: writeup._id, entityLabel: writeup.title,
+  });
+    res.json({ writeup });
+  } catch (e) {
+    console.error('[writeup] update', e);
+    res.status(500).json({ message: 'Could not update write-up' });
+  }
+};

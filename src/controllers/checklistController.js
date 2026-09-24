@@ -267,3 +267,31 @@ exports.saveResponse = async (req, res) => {
   );
   res.json({ response: saved });
 };
+
+exports.updateChecklist = async (req, res) => {
+  try {
+    const checklist = await Checklist.findById(req.params.id);
+    if (!checklist) return res.status(404).json({ message: 'Checklist not found' });
+
+    if (req.body.title != null) checklist.title = req.body.title;
+    if (Array.isArray(req.body.items)) {
+      checklist.items = req.body.items.map((it, i) => ({
+        text: it.text,
+        category: it.category || 'tool',
+        section: it.section || '',
+        code: it.code || '',
+        topic: it.topic || '',
+        order: it.order != null ? it.order : i,
+      }));
+    }
+    await checklist.save();
+    await logAudit(req, {                             // ← after delete, before res.json
+        action: 'update', entity: 'checklist',
+        entityId: checklist._id, entityLabel: checklist.title,
+      });
+    res.json({ checklist });
+  } catch (e) {
+    console.error('[checklist] update', e);
+    res.status(500).json({ message: 'Could not update checklist' });
+  }
+};
